@@ -47,21 +47,38 @@ La stratégie de sauvegarde, la restauration des données et les tests correspon
 
 ## Schéma logique
 
-```text
-Réseau local
-    |
-    +-- SSH --------------------> Serveur Debian
-    +-- Samba -----------------> Partage de fichiers
-    +-- Portainer :9443 -------> Gestion Docker
-    |
-    +-- Tunnel SSH ------------> Open WebUI :3000
-                                     |
-                                     v
-                              Réseau Docker
-                                ia_interne
-                                     |
-                                     v
-                                 Ollama
+Le schéma présente les principaux accès au serveur et les relations entre les services. Les ports indiqués correspondent aux publications observées sur l'hôte.
+
+```mermaid
+flowchart TB
+    LAN["Réseau local"]
+
+    subgraph HOST["Dell Latitude E5510 — Debian 13"]
+        SSH["SSH<br/>Administration distante"]
+        SAMBA["Samba<br/>Partage de fichiers"]
+        PORTAINER["Portainer CE<br/>HTTPS :9443"]
+
+        subgraph DOCKER["Docker"]
+            subgraph IA["Réseau ia_interne"]
+                WEBUI["Open WebUI<br/>Hôte :127.0.0.1:3000<br/>Conteneur :8080"]
+            end
+
+            OLLAMA["Ollama<br/>Hôte :127.0.0.1:11434<br/>Conteneur :11434"]
+            BRIDGE["Réseau bridge"]
+            OLLAMA --- BRIDGE
+        end
+    end
+
+    LAN --> SSH
+    LAN --> SAMBA
+    LAN --> PORTAINER
+    LAN -. "Tunnel SSH requis pour l'accès distant" .-> WEBUI
+    WEBUI --> OLLAMA
 ```
 
-Le tunnel SSH vers Open WebUI représente le mode d'accès prévu depuis un autre ordinateur lorsque le port 3000 reste lié à la boucle locale du serveur.
+### Points à retenir
+
+- Open WebUI et Ollama sont publiés sur la boucle locale IPv4 de l'hôte ; ils ne sont donc pas directement publiés sur toutes les interfaces réseau.
+- Un tunnel SSH peut permettre d'accéder à Open WebUI depuis un autre ordinateur. Son fonctionnement doit être vérifié après toute modification de la configuration.
+- Portainer est publié sur l'interface réseau locale du serveur, contrairement à Open WebUI et Ollama.
+- Le schéma est une vue simplifiée : il ne représente pas toutes les interfaces Docker ni l'ensemble des règles de filtrage réseau.
