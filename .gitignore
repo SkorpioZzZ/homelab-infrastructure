@@ -1,0 +1,22 @@
+
+# Secrets et variables d'environnement
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+
+# Sauvegardes et données locales
+backups/
+backup/
+*.bak
+*.dump
+*.sql
+*.sqlite
+*.sqlite3
+
+# Fichiers système et éditeurs
+.DS_Store
+Thumbs.db
+.vscode/
