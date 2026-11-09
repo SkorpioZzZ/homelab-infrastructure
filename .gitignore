@@ -21,3 +21,6 @@ backup/
 Thumbs.db
 .vscode/
 Homelab-igonre/
+
+# Notes privées (identifiants, IP)
+prive/
