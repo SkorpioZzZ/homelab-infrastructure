@@ -15,6 +15,8 @@ Les services sont hébergés sur un Dell Latitude E5510 fonctionnant sous Debian
 | Portainer CE | Docker        | Administration graphique des conteneurs       | Conteneur actif lors du relevé         |
 | Samba        | Service Linux | Partage de fichiers sur le réseau local       | Service `smbd` actif lors du relevé    |
 | SSH          | Service Linux | Administration distante du serveur            | Service actif lors du relevé           |
+| n8n          | Docker        | Automatisation de workflows                   | Conteneur actif lors du relevé         |
+| Tailscale    | Service Linux | Accès distant chiffré (VPN maillé)            | Service actif, vérifié le 2026-11-09   |
 
 Ces états correspondent aux observations réalisées pendant la documentation. Ils ne garantissent pas que les services seront toujours disponibles.
 
@@ -58,7 +60,7 @@ Configuration observée :
 
 Les valeurs des variables d'environnement et les éventuels identifiants ne sont pas publiés dans cette documentation.
 
-Le port étant lié à la boucle locale du serveur, l'accès depuis un autre ordinateur peut nécessiter un tunnel SSH. Le fonctionnement actuel de cet accès distant reste à vérifier.
+Le port étant lié à la boucle locale du serveur, l'accès depuis un autre appareil passe par Tailscale (`tailscale serve`, réservé au tailnet). Voir [`acces-distant-tailscale.md`](acces-distant-tailscale.md).
 
 ## 4. Administration des conteneurs
 
@@ -71,12 +73,18 @@ Portainer fournit une interface graphique pour consulter et administrer les ress
 Configuration observée :
 
 - Conteneur nommé `portainer`.
-- Port hôte lié à l'adresse LAN du serveur, sur le port `9443`, redirigé vers le port `9443` du conteneur.
+- Port hôte `127.0.0.1:9443`, redirigé vers le port `9443` du conteneur (conteneur recréé le 2026-11-09).
 - Réseau Docker `bridge`.
 - Volume Docker nommé `portainer_data` pour la persistance des données.
 - Politique de redémarrage `always`.
 
-L'interface est publiée sur l'adresse LAN du serveur. Les règles réseau effectives et les conditions d'accès doivent être vérifiées séparément avant de tirer une conclusion sur son niveau de sécurité.
+L'interface n'est publiée que sur la boucle locale. L'accès distant passe par `tailscale serve`, réservé aux appareils du tailnet.
+
+### n8n
+
+**Image Docker :** `docker.n8n.io/n8nio/n8n`
+
+Plateforme d'automatisation de workflows. Port hôte `127.0.0.1:5678`, accès distant via `tailscale serve`. Détails : [`services/n8n/`](../services/n8n/README.md).
 
 ## 5. Partage de fichiers et administration distante
 
@@ -134,7 +142,6 @@ La présence de ces volumes permet de séparer les données persistantes du cycl
 
 - Documenter la liste des modèles Ollama effectivement installés.
 - Mesurer les temps de réponse et la consommation mémoire des modèles.
-- Vérifier l'accès à Open WebUI depuis un autre poste.
 - Documenter la configuration réelle des partages Samba.
 - Décrire la méthode de déploiement de chaque conteneur.
 - Définir et tester une procédure de sauvegarde et de restauration.

@@ -1,5 +1,7 @@
 # Homelab — Infrastructure Linux et services auto-hébergés
 
+![Schéma d'architecture](docs/images/schema-architecture.png)
+
 ## Présentation
 
 Ce projet consiste à mettre en place et administrer un serveur personnel basé sur Debian GNU/Linux 13. Il sert d'environnement pratique pour expérimenter l'administration système Linux, la conteneurisation, les services réseau et l'intelligence artificielle locale.
@@ -18,6 +20,7 @@ L'objectif est de construire une infrastructure documentée, maintenable et adap
 | Architecture     | x86-64                                   |
 | Conteneurisation | Docker                                   |
 | Administration   | SSH, UFW, Portainer                      |
+| Accès distant    | Tailscale (WireGuard), `tailscale serve` |
 
 ## Services déployés
 
@@ -30,6 +33,10 @@ L'objectif est de construire une infrastructure documentée, maintenable et adap
 ### Administration des conteneurs
 
 - **Portainer CE** : interface web d'administration de l'environnement Docker.
+
+### Automatisation
+
+- **n8n** : plateforme d'automatisation de workflows.
 
 ### Partage de fichiers
 
@@ -47,7 +54,7 @@ Les premières vérifications ont identifié les mesures suivantes :
 - Accès distant via **Tailscale** (`tailscale serve`, tailnet uniquement) : aucun port ouvert sur la box. Voir [`docs/acces-distant-tailscale.md`](docs/acces-distant-tailscale.md).
 - Politiques de redémarrage automatique configurées pour les conteneurs.
 
-Les règles effectives de filtrage Docker, l'accessibilité de Portainer et la configuration détaillée de l'accès SSH restent à auditer.
+Les règles effectives de filtrage Docker et la configuration détaillée de l'accès SSH restent à auditer.
 
 ## Stockage et persistance
 

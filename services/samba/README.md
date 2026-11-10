@@ -14,12 +14,12 @@ Partage de fichiers sur le réseau local (service système, pas de conteneur).
 
 | Partage | Chemin | Accès | Droits fichiers / dossiers |
 | --- | --- | --- | --- |
-| `Alex` | `/opt/homelab/data/samba/alex` | `alex` | 0600 / 0700 |
-| `Maman` | `/opt/homelab/data/samba/maman` | `maman` | 0600 / 0700 |
-| `Partage` | `/opt/homelab/data/samba/partage` | groupe `famille` | 0660 / 2770 (setgid) |
+| `Utilisateur1` | `/opt/homelab/data/samba/utilisateur1` | `utilisateur1` | 0600 / 0700 |
+| `Utilisateur2` | `/opt/homelab/data/samba/utilisateur2` | `utilisateur2` | 0600 / 0700 |
+| `Partage` | `/opt/homelab/data/samba/partage` | groupe `partage-groupe` | 0660 / 2770 (setgid) |
 
 ## À faire
 - [x] `smb.conf` ajouté.
 - [x] Partages, chemins et droits documentés.
-- [ ] Inclure `/opt/homelab/data/samba` dans la stratégie de sauvegarde (données familiales).
+- [ ] Inclure `/opt/homelab/data/samba` dans la stratégie de sauvegarde (données personnelles).
 - [ ] Décrire un test d'accès depuis un autre poste.

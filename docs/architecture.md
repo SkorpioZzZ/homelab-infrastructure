@@ -21,7 +21,8 @@ L'objectif est de disposer d'un environnement d'expérimentation pour l'administ
 | ------------ | --------------------------------------- | -------------------------- |
 | Open WebUI   | Interface web pour les modèles locaux   | Boucle locale, port 3000   |
 | Ollama       | Exécution locale de modèles de langage  | Boucle locale, port 11434  |
-| Portainer CE | Administration des conteneurs Docker    | Adresse LAN, port 9443     |
+| Portainer CE | Administration des conteneurs Docker    | Boucle locale, port 9443   |
+| n8n          | Automatisation de workflows             | Boucle locale, port 5678   |
 | Samba        | Partage de fichiers sur le réseau local | Configuration à documenter |
 
 Open WebUI et Ollama sont connectés au réseau Docker `ia_interne`. Le fichier Compose d'Open WebUI déclare notamment son image, ses paramètres, son stockage persistant, son contrôle de santé et son réseau.
@@ -34,7 +35,8 @@ Portainer et Ollama sont également présents dans l'environnement Docker. Leur 
 - Les connexions entrantes sont refusées par défaut.
 - Les règles identifiées autorisent SSH et Samba depuis le réseau local.
 - Open WebUI et Ollama sont publiés sur l'interface de boucle locale IPv4 de l'hôte.
-- Portainer est publié sur l'adresse réseau locale de l'hôte.
+- Portainer et n8n sont publiés sur l'interface de boucle locale de l'hôte.
+- L'accès distant passe par Tailscale : `tailscale serve` relaie en HTTPS vers chaque service, uniquement pour les appareils du tailnet. Aucun port n'est ouvert sur la box. Voir [`acces-distant-tailscale.md`](acces-distant-tailscale.md).
 - Les conteneurs disposent de politiques de redémarrage automatique.
 
 Ces éléments décrivent l'état observé pendant la documentation. Ils ne constituent pas un audit exhaustif de sécurité.
@@ -56,12 +58,15 @@ flowchart TB
     subgraph HOST["Dell Latitude E5510 — Debian 13"]
         SSH["SSH<br/>Administration distante"]
         SAMBA["Samba<br/>Partage de fichiers"]
-        PORTAINER["Portainer CE<br/>HTTPS :9443"]
+        TS["Tailscale<br/>tailscale serve (HTTPS)"]
 
         subgraph DOCKER["Docker"]
             subgraph IA["Réseau ia_interne"]
                 WEBUI["Open WebUI<br/>Hôte :127.0.0.1:3000<br/>Conteneur :8080"]
             end
+
+            PORTAINER["Portainer CE<br/>Hôte :127.0.0.1:9443"]
+            N8N["n8n<br/>Hôte :127.0.0.1:5678"]
 
             OLLAMA["Ollama<br/>Hôte :127.0.0.1:11434<br/>Conteneur :11434"]
             BRIDGE["Réseau bridge"]
@@ -71,14 +76,16 @@ flowchart TB
 
     LAN --> SSH
     LAN --> SAMBA
-    LAN --> PORTAINER
-    LAN -. "Tunnel SSH requis pour l'accès distant" .-> WEBUI
+    APPAREILS["Mes appareils<br/>(tailnet)"] -- "Tunnel WireGuard" --> TS
+    TS --> WEBUI
+    TS --> N8N
+    TS --> PORTAINER
     WEBUI --> OLLAMA
 ```
 
 ### Points à retenir
 
 - Open WebUI et Ollama sont publiés sur la boucle locale IPv4 de l'hôte ; ils ne sont donc pas directement publiés sur toutes les interfaces réseau.
-- Un tunnel SSH peut permettre d'accéder à Open WebUI depuis un autre ordinateur. Son fonctionnement doit être vérifié après toute modification de la configuration.
-- Portainer est publié sur l'interface réseau locale du serveur, contrairement à Open WebUI et Ollama.
+- L'accès depuis un autre appareil passe par Tailscale (`tailscale serve`), vérifié depuis un téléphone en 4G.
+- Ollama n'est pas servi via Tailscale : seul Open WebUI l'utilise, en interne.
 - Le schéma est une vue simplifiée : il ne représente pas toutes les interfaces Docker ni l'ensemble des règles de filtrage réseau.

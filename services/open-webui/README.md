@@ -14,7 +14,9 @@ Interface web pour discuter avec les modèles servis par Ollama.
 | Déploiement| Compose : `/opt/homelab/compose/open-webui/compose.yaml` ([copie](compose.yaml)) |
 
 ## Accès
-Depuis un autre poste : tunnel SSH `ssh -N -L 3000:127.0.0.1:3000 <user>@<ip-serveur>`, puis http://127.0.0.1:3000.
+Depuis un appareil du tailnet : `https://homelab.<tailnet>.ts.net` (via `tailscale serve`). Voir [`acces-distant-tailscale.md`](../../docs/acces-distant-tailscale.md).
+
+Alternative sans Tailscale : tunnel SSH `ssh -N -L 3000:127.0.0.1:3000 <user>@<ip-serveur>`, puis http://127.0.0.1:3000.
 
 ## Variables (valeurs non publiées)
 - `OLLAMA_BASE_URL` : adresse d'Ollama sur le réseau `ia_interne`.

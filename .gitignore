@@ -24,3 +24,6 @@ Homelab-igonre/
 
 # Notes privées (identifiants, IP)
 prive/
+
+# Fichiers générés hors projet
+Claude outputs/

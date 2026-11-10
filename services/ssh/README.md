@@ -22,4 +22,4 @@ Administration à distance du serveur (service système).
 ## À faire
 - [x] `PasswordAuthentication no` et `PermitRootLogin no` vérifiés.
 - [ ] Passer `X11Forwarding no` (inutile sur un serveur sans interface graphique).
-- [ ] Ajouter `AllowUsers alex` pour restreindre les comptes autorisés en SSH.
+- [ ] Ajouter `AllowUsers <utilisateur>` pour restreindre les comptes autorisés en SSH.

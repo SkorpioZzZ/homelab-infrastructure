@@ -6,17 +6,19 @@ Plateforme d'automatisation de workflows.
 | ---------- | ---------------------------------------------- |
 | Image      | `docker.n8n.io/n8nio/n8n:latest`               |
 | Conteneur  | `n8n`                                          |
-| Port       | `0.0.0.0:5678` et `[::]:5678` → `5678` ⚠️       |
+| Port       | `127.0.0.1:5678` → `5678` (boucle locale)      |
+| Accès      | `tailscale serve`, port HTTPS 8443, tailnet uniquement |
 | Déploiement| Compose : `~/n8n/docker-compose.yml` (à copier ici) |
 | Installé   | 2026-11-09                                     |
 
-## ⚠️ Exposition réseau
-Le port est publié sur **toutes les interfaces, IPv4 et IPv6**. Docker écrit ses
-propres règles iptables : **UFW ne filtre pas ce port**. Lier à `127.0.0.1`
-(accès par tunnel SSH, comme Open WebUI) ou à l'IP LAN uniquement.
+## Exposition réseau
+Initialement publié sur toutes les interfaces (`0.0.0.0` et `[::]`), ce qui
+contournait UFW (Docker écrit ses propres règles iptables). Le port est désormais
+lié à `127.0.0.1` (constaté avec `docker ps` le 2026-11-09).
 
 ## À faire
-- [ ] Restreindre le port (`127.0.0.1:5678:5678`).
+- [x] Restreindre le port (`127.0.0.1:5678:5678`).
+- [ ] Configurer `N8N_HOST`, `N8N_PROTOCOL`, `WEBHOOK_URL` si des webhooks sont utilisés (sinon les URL affichent `localhost`).
 - [ ] Ajouter `docker-compose.yml` (sans secrets) et `.env.example`.
 - [ ] Déplacer le Compose vers `/opt/homelab/compose/n8n/` (cohérence).
 - [ ] Remplacer `:latest` par une version figée.

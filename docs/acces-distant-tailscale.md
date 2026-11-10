@@ -30,7 +30,7 @@ Ils ne sont pas concurrents. Ici, Tailscale fournit les deux : le tunnel **et** 
 - **MagicDNS** permet d'utiliser des noms (`homelab`) plutôt que des IP.
 - Identité : compte **GitHub**. Tout nouvel appareil doit se connecter avec ce même compte, sinon il rejoint un autre tailnet.
 
-Appareils : `homelab` (Dell), `alex-thinkpad-t420s`, `honor-600` (téléphone).
+Appareils : `homelab` (le serveur Dell), un PC portable et un téléphone Android.
 
 ## 4. Architecture finale
 
@@ -51,6 +51,10 @@ Dell « homelab » ── tailscale serve (HTTPS, certificat Tailscale)
 | Portainer | `https://homelab.<tailnet>.ts.net:10000` |
 
 Tous sont marqués **`tailnet only`** : invisibles depuis Internet.
+
+![Sortie de tailscale serve status](images/tailscale-serve-status.png)
+
+![Open WebUI depuis un téléphone en 4G](images/openwebui-mobile-4g.png)
 
 ## 5. Les choix et leurs raisons
 
@@ -101,9 +105,11 @@ C'est la partie la plus instructive : chaque problème a été diagnostiqué cou
 
 ### a. Le Dell n'apparaissait pas dans la console
 - **Symptôme** : `tailscale status` affichait le Dell `offline`, alors que `systemctl status tailscaled` indiquait « Connected ».
-- **Hypothèses écartées** : mauvais compte (même tailnet `SkorpioZzZ@`), horloge fausse (`timedatectl` synchronisé), réseau bloqué (`netcheck` OK).
+- **Hypothèses écartées** : mauvais compte (tous les appareils étaient dans le même tailnet), horloge fausse (`timedatectl` synchronisé), réseau bloqué (`netcheck` OK).
 - **Cause réelle**, trouvée dans les journaux : `PollNetMap: initial fetch failed 404: node not found`. La machine avait été **supprimée côté serveur** mais gardait localement son ancienne identité.
 - **Correction** : `sudo tailscale up --force-reauth`, ce qui a donné une nouvelle identité et une nouvelle IP.
+![Journal : erreur 404 puis réauthentification](images/journal-404-node-not-found.png)
+
 - **Leçon** : lire les journaux, et avec `sudo` (sans, `journalctl` affichait « No entries »).
 
 ### b. « Ce site est inaccessible » sur le téléphone
