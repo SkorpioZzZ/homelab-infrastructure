@@ -1,0 +1,23 @@
+# Reconstitué depuis `docker inspect` (2026-11-09).
+# Le conteneur actuel a été lancé hors Compose : ce fichier documente la config.
+# Pour l'adopter : docker stop ollama && docker rm ollama && docker compose up -d
+# (le volume et le réseau sont "external" : les données sont conservées).
+services:
+  ollama:
+    image: ollama/ollama
+    container_name: ollama
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - ia_interne
+
+volumes:
+  ollama_data:
+    external: true
+
+networks:
+  ia_interne:
+    external: true

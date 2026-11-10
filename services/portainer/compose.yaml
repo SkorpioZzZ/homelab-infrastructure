@@ -1,0 +1,18 @@
+# Reconstitué depuis `docker inspect` (2026-11-09).
+# Le conteneur actuel a été lancé hors Compose : ce fichier documente la config.
+# Pour l'adopter : docker stop portainer && docker rm portainer && docker compose up -d
+# 2026-11-09 : conteneur recréé avec -p 127.0.0.1:9443:9443 (docker run).
+services:
+  portainer:
+    image: portainer/portainer-ce:lts
+    container_name: portainer
+    restart: always
+    ports:
+      - "127.0.0.1:9443:9443"   # accès distant via tailscale serve (voir docs/acces-distant-tailscale.md)
+    volumes:
+      - portainer_data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+
+volumes:
+  portainer_data:
+    external: true

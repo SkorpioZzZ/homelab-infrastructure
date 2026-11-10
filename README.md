@@ -43,7 +43,8 @@ Les premières vérifications ont identifié les mesures suivantes :
 - Accès SSH autorisé depuis le réseau local.
 - Règles dédiées au partage Samba sur le réseau local.
 - Open WebUI et Ollama publiés sur l'interface de boucle locale IPv4 de l'hôte.
-- Portainer publié sur l'adresse réseau locale de l'hôte.
+- Portainer et n8n publiés sur l'interface de boucle locale (`127.0.0.1`).
+- Accès distant via **Tailscale** (`tailscale serve`, tailnet uniquement) : aucun port ouvert sur la box. Voir [`docs/acces-distant-tailscale.md`](docs/acces-distant-tailscale.md).
 - Politiques de redémarrage automatique configurées pour les conteneurs.
 
 Les règles effectives de filtrage Docker, l'accessibilité de Portainer et la configuration détaillée de l'accès SSH restent à auditer.
@@ -81,6 +82,8 @@ La stratégie de sauvegarde et la procédure de restauration restent à document
 
 - [`docs/architecture.md`](docs/architecture.md) : matériel, système, réseau Docker et architecture générale.
 - [`docs/services.md`](docs/services.md) : rôle des services déployés et organisation des conteneurs.
+- [`docs/acces-distant-tailscale.md`](docs/acces-distant-tailscale.md) : accès distant, choix techniques et journal de dépannage.
 - [`docs/maintenance.md`](docs/maintenance.md) : mises à jour, vérifications, sauvegardes et dépannage.
+- [`services/`](services/README.md) : un dossier par service (configuration et fiche d'exploitation).
 
 La documentation distingue les éléments vérifiés des points restant à tester.

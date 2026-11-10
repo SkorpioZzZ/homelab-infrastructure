@@ -1,0 +1,32 @@
+# Copie de /opt/homelab/compose/open-webui/compose.yaml (2026-11-09).
+# Projet Compose "open-webui" → volume réel : open-webui_open_webui_data.
+services:
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: open-webui
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:8080"
+    environment:
+      OLLAMA_BASE_URL: http://ollama:11434
+      WEBUI_AUTH: "True"
+    volumes:
+      - open_webui_data:/app/backend/data
+    networks:
+      - ia_interne
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/health', timeout=5)"
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+volumes:
+  open_webui_data:
+
+networks:
+  ia_interne:
+    external: true
