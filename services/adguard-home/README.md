@@ -53,4 +53,4 @@ nmcli connection up "<connexion>"
 ## À faire
 - [ ] Figer la version de l'image après quelques jours sans problème.
 - [ ] Sauvegarder le volume de configuration.
-- [ ] Réserver l'IP du serveur dans la box (sinon les appareils pointent vers une IP qui peut changer).
+- [x] IP du serveur réservée dans la box (règle statique DHCP IPv4).
