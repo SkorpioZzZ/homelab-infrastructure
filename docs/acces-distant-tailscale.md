@@ -39,22 +39,32 @@ Téléphone / ThinkPad
       │  tunnel WireGuard chiffré (Tailscale)
       ▼
 Dell « homelab » ── tailscale serve (HTTPS, certificat Tailscale)
-      ├── :443   ──▶ 127.0.0.1:3000 ──▶ conteneur Open WebUI (8080)
       ├── :8443  ──▶ 127.0.0.1:5678 ──▶ conteneur n8n
+      ├── :9000  ──▶ 127.0.0.1:3000 ──▶ conteneur AdGuard Home (administration)
       └── :10000 ──▶ 127.0.0.1:9443 ──▶ conteneur Portainer (HTTPS auto-signé)
 ```
 
 | Service | URL (depuis le tailnet) |
 |---|---|
-| Open WebUI | `https://homelab.<tailnet>.ts.net` |
 | n8n | `https://homelab.<tailnet>.ts.net:8443` |
+| AdGuard Home (admin) | `https://homelab.<tailnet>.ts.net:9000` |
 | Portainer | `https://homelab.<tailnet>.ts.net:10000` |
 
-Tous sont marqués **`tailnet only`** : invisibles depuis Internet.
+Tous sont marqués **`tailnet only`** : invisibles depuis Internet. Le port 443 n'est plus utilisé.
+
+Captures prises avant le 2026-11-18, quand Open WebUI était encore en place :
 
 ![Sortie de tailscale serve status](images/tailscale-serve-status.png)
 
 ![Open WebUI depuis un téléphone en 4G](images/openwebui-mobile-4g.png)
+
+### DNS du tailnet : AdGuard Home
+
+Depuis le 2026-11-18, la console Tailscale (DNS → Nameservers) déclare l'IP Tailscale du serveur comme serveur DNS, avec **Override DNS servers** activé. Les appareils du tailnet, dont le téléphone en 4G, passent donc par AdGuard Home et bénéficient du blocage des publicités.
+
+- Sans « Override DNS servers », les appareils gardent leur DNS habituel et AdGuard n'est jamais interrogé.
+- Le serveur, lui, **refuse** ce DNS (`tailscale set --accept-dns=false`) : sinon il dépendrait de son propre conteneur pour résoudre les noms, et ne pourrait plus rien télécharger pour se réparer si AdGuard tombait (voir 7.d).
+- Tant que Tailscale est actif sur le téléphone, serveur éteint = plus de DNS sur le téléphone.
 
 ## 5. Les choix et leurs raisons
 
@@ -68,7 +78,7 @@ Tous sont marqués **`tailnet only`** : invisibles depuis Internet.
 - HTTPS avec un vrai certificat, sans configuration.
 - Aucun composant supplémentaire à maintenir.
 - `--bg` rend la configuration persistante après redémarrage.
-- **Limite** : seulement 3 ports HTTPS possibles (443, 8443, 10000), donc 3 services maximum. Au-delà, il faudra un vrai reverse proxy (Caddy), toujours accessible seulement via Tailscale.
+- **Limite** : Funnel n'accepte que 3 ports (443, 8443, 10000). En mode `tailnet only`, `tailscale serve` accepte d'autres ports (ici 9000).
 
 ### Un port par service, pas un chemin (`/n8n`)
 La plupart des applications supposent être servies à la racine `/`. Sous un sous-chemin, leurs liens et redirections cassent.
@@ -77,7 +87,7 @@ La plupart des applications supposent être servies à la racine `/`. Sous un so
 Portainer sert lui-même du HTTPS avec un certificat auto-signé. `https+insecure` demande à Tailscale de ne pas vérifier ce certificat. C'est acceptable car cette connexion reste **interne à la machine** (`127.0.0.1`). Côté client, le certificat est valide.
 
 ### Funnel : refusé
-**Funnel** rend un service public sur Internet. C'est l'inverse de l'objectif. À n'utiliser que pour une démo publique volontaire.
+**Funnel** rend un service public sur Internet. C'est l'inverse de l'objectif. À n'utiliser que pour une démo publique volontaire, et à **vérifier après coup** avec `tailscale serve status` (voir 7.e).
 
 ## 6. Commandes utiles
 
@@ -94,7 +104,7 @@ sudo journalctl -u tailscaled -n 50 --no-pager   # journaux (sudo obligatoire)
 
 Ajouter un service :
 ```bash
-sudo tailscale serve --bg 3000                                        # port 443
+sudo tailscale serve --bg --https=9000 3000                           # admin AdGuard Home
 sudo tailscale serve --bg --https=8443 5678
 sudo tailscale serve --bg --https=10000 https+insecure://127.0.0.1:9443
 ```
@@ -130,7 +140,14 @@ C'est la partie la plus instructive : chaque problème a été diagnostiqué cou
 - **Conséquence** : sur le Dell uniquement, la résolution des noms du tailnet était intermittente.
 - **Correction** : ajout de `nohook resolv.conf` dans `/etc/dhcpcd.conf`. `dhcpcd` gère toujours l'IP, Tailscale seul gère le DNS et relaie les autres requêtes vers la box.
 - **Retour arrière** : `sudo cp /etc/dhcpcd.conf.bak /etc/dhcpcd.conf && sudo dhcpcd -n enp11s0`.
-- Alternatives écartées : `tailscale set --accept-dns=false` (plus simple, mais plus de noms du tailnet sur le serveur) ; `systemd-resolved` (plus propre, mais un composant de plus).
+- Alternatives écartées à l'époque : `tailscale set --accept-dns=false` (plus simple, mais plus de noms du tailnet sur le serveur) ; `systemd-resolved` (plus propre, mais un composant de plus).
+- **Mise à jour 2026-11-18** : passage à `tailscale set --accept-dns=false`. Avec AdGuard Home déclaré comme DNS du tailnet, le serveur aurait dépendu de son propre conteneur pour résoudre les noms. Tailscale a restauré `/etc/resolv.pre-tailscale-backup.conf` (DNS de la box) ; grâce à `nohook resolv.conf`, ce fichier n'est plus réécrit par personne. Contrepartie : plus de noms du tailnet sur le serveur (les IP `100.x` fonctionnent).
+
+### e. Funnel resté actif sur n8n
+- **Constat (2026-11-18)** : `tailscale status` affichait `# Funnel on`. `tailscale serve status` montrait le port 443 en **Funnel** vers n8n (`127.0.0.1:5678`) : n8n était public sur Internet, alors que la doc le disait « tailnet only » depuis le 13/11.
+- **Correction** : `sudo tailscale funnel --https=443 off`, puis vérification que `tailscale status` n'affiche plus de ligne Funnel.
+- **Vérifications** : version de n8n (2.46.7, postérieure aux correctifs des failles critiques de 2026), un seul utilisateur, aucune exécution inconnue.
+- **Leçon** : vérifier l'état réel (`tailscale serve status`) plutôt que se fier à la doc ou au souvenir de ce qui a été fait.
 
 ## 8. Points de vigilance
 
@@ -139,7 +156,9 @@ C'est la partie la plus instructive : chaque problème a été diagnostiqué cou
 - [ ] Test après redémarrage : `tailscale status`, `tailscale serve status`, `docker ps`, `cat /etc/resolv.conf`.
 - [ ] n8n : les URL de webhook affichent `localhost`. À corriger via `N8N_HOST`, `N8N_PROTOCOL` et `WEBHOOK_URL` si j'utilise des webhooks.
 - [ ] Changement de box : `resolv.conf` ne suivra pas le nouveau DNS automatiquement (voir 7.d).
+- [ ] Après toute modification de `tailscale serve` : `tailscale serve status` ne doit afficher aucun « Funnel on ».
+- [ ] Avant d'éteindre le serveur : couper Tailscale sur le téléphone (il n'aurait plus de DNS).
 
 ## 9. L'expliquer en 30 secondes
 
-> « Mon serveur n'est exposé à aucun port sur Internet. J'utilise Tailscale, un VPN maillé basé sur WireGuard : mes appareils forment un réseau privé chiffré, et seuls eux peuvent joindre le serveur. Les conteneurs Docker n'écoutent qu'en local, et c'est `tailscale serve` qui fait office de reverse proxy HTTPS vers chacun d'eux. J'ai dû résoudre une identité de machine supprimée côté serveur, un problème de binding Docker et un conflit DNS entre dhcpcd et Tailscale. »
+> « Mon serveur n'est exposé à aucun port sur Internet. J'utilise Tailscale, un VPN maillé basé sur WireGuard : mes appareils forment un réseau privé chiffré, et seuls eux peuvent joindre le serveur. Les conteneurs Docker n'écoutent qu'en local, et c'est `tailscale serve` qui fait office de reverse proxy HTTPS vers chacun d'eux. Le serveur sert aussi de DNS filtrant (AdGuard Home) à tous mes appareils du tailnet, téléphone compris en 4G. J'ai dû résoudre une identité de machine supprimée côté serveur, un problème de binding Docker, un conflit DNS entre dhcpcd et Tailscale, et repérer un Funnel resté actif. »

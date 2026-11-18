@@ -1,10 +1,27 @@
 # Homelab — Infrastructure Linux et services auto-hébergés
 
-![Schéma d'architecture](docs/images/schema-architecture.png)
+```mermaid
+flowchart LR
+    LAN["Appareils du réseau local"] -- "DNS :53" --> ADG
+    APP["Mes appareils<br/>(tailnet)"] -- "Tunnel WireGuard" --> TS
+    subgraph HOST["Dell Latitude E5510 — Debian 13"]
+        TS["Tailscale<br/>tailscale serve"]
+        subgraph DOCKER["Docker"]
+            ADG["AdGuard Home<br/>DNS filtrant"]
+            N8N["n8n"]
+            PORTAINER["Portainer CE"]
+        end
+    end
+    TS --> ADG
+    TS --> N8N
+    TS --> PORTAINER
+```
+
+Schéma détaillé : [`docs/architecture.md`](docs/architecture.md).
 
 ## Présentation
 
-Ce projet consiste à mettre en place et administrer un serveur personnel basé sur Debian GNU/Linux 13. Il sert d'environnement pratique pour expérimenter l'administration système Linux, la conteneurisation, les services réseau et l'intelligence artificielle locale.
+Ce projet consiste à mettre en place et administrer un serveur personnel basé sur Debian GNU/Linux 13. Il sert d'environnement pratique pour expérimenter l'administration système Linux, la conteneurisation, les services réseau et le filtrage DNS.
 
 L'objectif est de construire une infrastructure documentée, maintenable et adaptée à du matériel ancien disposant de ressources limitées.
 
@@ -24,11 +41,11 @@ L'objectif est de construire une infrastructure documentée, maintenable et adap
 
 ## Services déployés
 
-### Intelligence artificielle locale
+### Filtrage DNS
 
-- **Ollama** : exécution locale de modèles de langage.
-- **Open WebUI** : interface web permettant d'interagir avec les modèles disponibles via Ollama.
-- **Réseau Docker dédié** : les deux services sont connectés au réseau `ia_interne`.
+- **AdGuard Home** : serveur DNS qui bloque publicités et traqueurs pour les appareils du réseau local et du tailnet (téléphone compris, même en 4G). Requêtes transmises chiffrées (DNS-over-HTTPS) vers Quad9.
+
+Ollama et Open WebUI (IA locale) ont été retirés le 2026-11-18 : les modèles utilisables avec 4 Go de RAM étaient trop lents pour un usage réel.
 
 ### Administration des conteneurs
 
@@ -49,7 +66,7 @@ Les premières vérifications ont identifié les mesures suivantes :
 - Pare-feu UFW actif avec une politique entrante par défaut en refus.
 - Accès SSH autorisé depuis le réseau local.
 - Règles dédiées au partage Samba sur le réseau local.
-- Open WebUI et Ollama publiés sur l'interface de boucle locale IPv4 de l'hôte.
+- AdGuard Home : DNS (port 53) publié sur toutes les interfaces, seule exception volontaire, sans redirection sur la box ; interface d'administration sur la boucle locale.
 - Portainer et n8n publiés sur l'interface de boucle locale (`127.0.0.1`).
 - Accès distant via **Tailscale** (`tailscale serve`, tailnet uniquement) : aucun port ouvert sur la box. Voir [`docs/acces-distant-tailscale.md`](docs/acces-distant-tailscale.md).
 - Politiques de redémarrage automatique configurées pour les conteneurs.
@@ -60,8 +77,8 @@ Les règles effectives de filtrage Docker et la configuration détaillée de l'a
 
 Des volumes Docker nommés ont été identifiés pour :
 
-- les données d'Ollama ;
-- les données d'Open WebUI ;
+- les données et la configuration d'AdGuard Home ;
+- les données de n8n ;
 - les données de Portainer.
 
 La stratégie de sauvegarde et la procédure de restauration restent à documenter et à tester.
@@ -73,7 +90,7 @@ La stratégie de sauvegarde et la procédure de restauration restent à document
 - Organisation des réseaux de services.
 - Administration distante via SSH.
 - Configuration d'un pare-feu.
-- Déploiement de services d'IA locale.
+- Mise en place d'un DNS filtrant (DNS-over-HTTPS, DNSSEC).
 - Gestion des données persistantes.
 - Diagnostic et documentation d'une infrastructure.
 

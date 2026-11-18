@@ -4,7 +4,7 @@
 
 Le homelab repose sur un Dell Latitude E5510 sous Debian GNU/Linux 13 (Trixie). Il héberge des services conteneurisés et des services système accessibles depuis le réseau local.
 
-L'objectif est de disposer d'un environnement d'expérimentation pour l'administration Linux, Docker, les réseaux et l'intelligence artificielle locale, tout en tenant compte des ressources limitées de la machine.
+L'objectif est de disposer d'un environnement d'expérimentation pour l'administration Linux, Docker et les réseaux (DNS compris), tout en tenant compte des ressources limitées de la machine.
 
 ## Matériel et système
 
@@ -19,22 +19,23 @@ L'objectif est de disposer d'un environnement d'expérimentation pour l'administ
 
 | Service      | Fonction                                | Accès réseau constaté      |
 | ------------ | --------------------------------------- | -------------------------- |
-| Open WebUI   | Interface web pour les modèles locaux   | Boucle locale, port 3000   |
-| Ollama       | Exécution locale de modèles de langage  | Boucle locale, port 11434  |
+| AdGuard Home | DNS filtrant (pubs, traqueurs)          | DNS : toutes interfaces, port 53 ; admin : boucle locale, port 3000 |
 | Portainer CE | Administration des conteneurs Docker    | Boucle locale, port 9443   |
 | n8n          | Automatisation de workflows             | Boucle locale, port 5678   |
+| Glances      | Supervision du serveur                  | Toutes interfaces, port 61208 (à restreindre) |
 | Samba        | Partage de fichiers sur le réseau local | Configuration à documenter |
 
-Open WebUI et Ollama sont connectés au réseau Docker `ia_interne`. Le fichier Compose d'Open WebUI déclare notamment son image, ses paramètres, son stockage persistant, son contrôle de santé et son réseau.
+Chaque service déployé par Compose a son propre réseau Docker par défaut ; aucun réseau n'est partagé entre services.
 
-Portainer et Ollama sont également présents dans l'environnement Docker. Leur méthode exacte de déploiement doit être documentée séparément si elle diffère du fichier Compose d'Open WebUI.
+Ollama, Open WebUI et leur réseau `ia_interne` ont été supprimés le 2026-11-18. n8n, qui était aussi branché sur `ia_interne`, a été détaché avant la suppression du réseau.
 
 ## Accès et sécurité
 
 - Le pare-feu UFW est actif.
 - Les connexions entrantes sont refusées par défaut.
 - Les règles identifiées autorisent SSH et Samba depuis le réseau local.
-- Open WebUI et Ollama sont publiés sur l'interface de boucle locale IPv4 de l'hôte.
+- AdGuard Home publie le DNS (port 53, TCP/UDP) sur toutes les interfaces : exception volontaire, un DNS devant être joignable par les appareils. Aucun port n'est redirigé sur la box. Son interface d'administration reste sur la boucle locale.
+- Glances est publié sur toutes les interfaces (port 61208) : à restreindre à la boucle locale.
 - Portainer et n8n sont publiés sur l'interface de boucle locale de l'hôte.
 - L'accès distant passe par Tailscale : `tailscale serve` relaie en HTTPS vers chaque service, uniquement pour les appareils du tailnet. Aucun port n'est ouvert sur la box. Voir [`acces-distant-tailscale.md`](acces-distant-tailscale.md).
 - Les conteneurs disposent de politiques de redémarrage automatique.
@@ -43,7 +44,7 @@ Ces éléments décrivent l'état observé pendant la documentation. Ils ne cons
 
 ## Stockage persistant
 
-Des volumes Docker nommés sont présents pour les données d'Ollama, d'Open WebUI et de Portainer.
+Des volumes Docker nommés sont présents pour les données d'AdGuard Home, de n8n et de Portainer.
 
 La stratégie de sauvegarde, la restauration des données et les tests correspondants restent à définir.
 
@@ -61,31 +62,28 @@ flowchart TB
         TS["Tailscale<br/>tailscale serve (HTTPS)"]
 
         subgraph DOCKER["Docker"]
-            subgraph IA["Réseau ia_interne"]
-                WEBUI["Open WebUI<br/>Hôte :127.0.0.1:3000<br/>Conteneur :8080"]
-            end
-
+            ADGUARD["AdGuard Home<br/>DNS :53 (toutes interfaces)<br/>Admin :127.0.0.1:3000"]
             PORTAINER["Portainer CE<br/>Hôte :127.0.0.1:9443"]
             N8N["n8n<br/>Hôte :127.0.0.1:5678"]
-
-            OLLAMA["Ollama<br/>Hôte :127.0.0.1:11434<br/>Conteneur :11434"]
-            BRIDGE["Réseau bridge"]
-            OLLAMA --- BRIDGE
         end
     end
 
+    QUAD9["Quad9<br/>DNS-over-HTTPS"]
+
     LAN --> SSH
     LAN --> SAMBA
+    LAN -- "requêtes DNS" --> ADGUARD
     APPAREILS["Mes appareils<br/>(tailnet)"] -- "Tunnel WireGuard" --> TS
-    TS --> WEBUI
-    TS --> N8N
-    TS --> PORTAINER
-    WEBUI --> OLLAMA
+    TS -- ":9000" --> ADGUARD
+    TS -- ":8443" --> N8N
+    TS -- ":10000" --> PORTAINER
+    APPAREILS -. "DNS du tailnet" .-> ADGUARD
+    ADGUARD -- "requêtes non bloquées" --> QUAD9
 ```
 
 ### Points à retenir
 
-- Open WebUI et Ollama sont publiés sur la boucle locale IPv4 de l'hôte ; ils ne sont donc pas directement publiés sur toutes les interfaces réseau.
-- L'accès depuis un autre appareil passe par Tailscale (`tailscale serve`), vérifié depuis un téléphone en 4G.
-- Ollama n'est pas servi via Tailscale : seul Open WebUI l'utilise, en interne.
+- Les interfaces web (AdGuard Home, n8n, Portainer) ne sont publiées que sur la boucle locale ; l'accès depuis un autre appareil passe par `tailscale serve`, réservé au tailnet.
+- Seul le DNS d'AdGuard Home écoute sur le réseau local, parce que c'est son rôle.
+- Le serveur lui-même n'utilise pas AdGuard (`accept-dns=false`) : il reste capable de résoudre les noms si le conteneur tombe.
 - Le schéma est une vue simplifiée : il ne représente pas toutes les interfaces Docker ni l'ensemble des règles de filtrage réseau.

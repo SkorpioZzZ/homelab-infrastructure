@@ -34,8 +34,8 @@ Cette commande affiche les conteneurs actifs et arrêtés, ainsi que leur état.
 ### Consulter les journaux
 
 ```bash
-docker logs --tail 100 open-webui
-docker logs --tail 100 ollama
+docker logs --tail 100 adguard-home
+docker logs --tail 100 n8n
 docker logs --tail 100 portainer
 ```
 
@@ -72,7 +72,7 @@ Contrôler ensuite l'état du système et des services.
 
 Avant de mettre à jour une image, vérifier les changements annoncés et prévoir une méthode de retour arrière adaptée. Une nouvelle image peut modifier le comportement d'un service.
 
-Les procédures exactes de mise à jour d'Ollama, d'Open WebUI et de Portainer restent à formaliser selon leur méthode de déploiement respective.
+Les procédures exactes de mise à jour d'AdGuard Home, de n8n et de Portainer restent à formaliser selon leur méthode de déploiement respective.
 
 ## 5. Sauvegardes et restauration
 
@@ -80,8 +80,8 @@ Les sauvegardes sont essentielles pour protéger les données persistantes et la
 
 Les volumes Docker identifiés comprennent notamment :
 
-- `ollama_data`
-- `open-webui_open_webui_data`
+- `adguard-home_adguard_conf` (configuration d'AdGuard Home)
+- `n8n_n8n_data`
 - `portainer_data`
 
 La présence de ces volumes ne constitue pas, à elle seule, une sauvegarde.
@@ -102,6 +102,18 @@ En cas de dysfonctionnement :
 6. Après intervention, vérifier que le service fonctionne de nouveau.
 
 Éviter de supprimer un conteneur, un volume ou des données persistantes sans avoir évalué les conséquences.
+
+### Panne DNS (AdGuard Home)
+
+Le serveur est le DNS de certains appareils et du tailnet. Si AdGuard Home ne répond plus, ces appareils ne résolvent plus aucun nom (« pas d'Internet » alors que le réseau fonctionne).
+
+1. Depuis un appareil : `dig @<ip-serveur> wikipedia.org +short`. Pas de réponse → AdGuard ou le serveur est en cause.
+2. Sur le serveur : `docker ps --filter name=adguard-home` puis `docker logs --tail 50 adguard-home`.
+3. Dépannage rapide côté client : remettre le DNS automatique, ou couper Tailscale sur le téléphone.
+
+Le serveur lui-même n'utilise pas AdGuard (`tailscale set --accept-dns=false`), il reste donc administrable pendant la panne.
+
+**Avant d'éteindre le serveur** : couper Tailscale sur le téléphone, sinon il n'a plus de DNS.
 
 ## 7. Sécurité
 

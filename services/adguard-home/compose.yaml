@@ -1,0 +1,23 @@
+# AdGuard Home — bloqueur de pub / DNS du réseau local.
+# Emplacement sur le serveur : /opt/homelab/compose/adguard-home/compose.yaml
+services:
+  adguard-home:
+    image: adguard/adguardhome:latest   # à figer sur une version une fois l'installation validée
+    container_name: adguard-home
+    restart: unless-stopped
+    ports:
+      # DNS : doit être joignable par les appareils du réseau local (et du tailnet).
+      # Exception volontaire à la règle "127.0.0.1 uniquement".
+      # Aucun port n'est redirigé sur la Bbox : rien n'est exposé sur Internet.
+      - "53:53/tcp"
+      - "53:53/udp"
+      # Interface d'administration (assistant d'installation puis panneau admin) :
+      # boucle locale uniquement, accès via tunnel SSH ou tailscale serve.
+      - "127.0.0.1:3000:3000/tcp"
+    volumes:
+      - adguard_work:/opt/adguardhome/work   # données (statistiques, journal des requêtes)
+      - adguard_conf:/opt/adguardhome/conf   # configuration (AdGuardHome.yaml)
+
+volumes:
+  adguard_work:
+  adguard_conf:

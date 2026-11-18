@@ -23,4 +23,6 @@ lié à `127.0.0.1` (constaté avec `docker ps` le 2026-11-09).
 - [ ] Déplacer le Compose vers `/opt/homelab/compose/n8n/` (cohérence).
 - [ ] Remplacer `:latest` par une version figée.
 - [ ] Vérifier le volume de données (workflows, identifiants chiffrés) et l'inclure aux sauvegardes.
-- [ ] Surveiller la RAM (`docker stats`) avec Ollama en parallèle.
+- [x] ~~Surveiller la RAM avec Ollama en parallèle~~ (Ollama retiré le 2026-11-18).
+- [x] Détaché du réseau `ia_interne` (supprimé) le 2026-11-18.
+- [x] Funnel découvert actif sur le port 443 → n8n, coupé le 2026-11-18 (voir `docs/acces-distant-tailscale.md`, 7.e).
