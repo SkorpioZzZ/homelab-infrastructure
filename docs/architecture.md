@@ -22,7 +22,7 @@ L'objectif est de disposer d'un environnement d'expérimentation pour l'administ
 | AdGuard Home | DNS filtrant (pubs, traqueurs)          | DNS : toutes interfaces, port 53 ; admin : boucle locale, port 3000 |
 | Portainer CE | Administration des conteneurs Docker    | Boucle locale, port 9443   |
 | n8n          | Automatisation de workflows             | Boucle locale, port 5678   |
-| Glances      | Supervision du serveur                  | Toutes interfaces, port 61208 (à restreindre) |
+| Glances      | Supervision du serveur                  | Boucle locale, port 61208  |
 | Samba        | Partage de fichiers sur le réseau local | Configuration à documenter |
 
 Chaque service déployé par Compose a son propre réseau Docker par défaut ; aucun réseau n'est partagé entre services.
@@ -35,7 +35,6 @@ Ollama, Open WebUI et leur réseau `ia_interne` ont été supprimés le 2026-11-
 - Les connexions entrantes sont refusées par défaut.
 - Les règles identifiées autorisent SSH et Samba depuis le réseau local.
 - AdGuard Home publie le DNS (port 53, TCP/UDP) sur toutes les interfaces : exception volontaire, un DNS devant être joignable par les appareils. Aucun port n'est redirigé sur la box. Son interface d'administration reste sur la boucle locale.
-- Glances est publié sur toutes les interfaces (port 61208) : à restreindre à la boucle locale.
 - Portainer et n8n sont publiés sur l'interface de boucle locale de l'hôte.
 - L'accès distant passe par Tailscale : `tailscale serve` relaie en HTTPS vers chaque service, uniquement pour les appareils du tailnet. Aucun port n'est ouvert sur la box. Voir [`acces-distant-tailscale.md`](acces-distant-tailscale.md).
 - Les conteneurs disposent de politiques de redémarrage automatique.
@@ -65,6 +64,7 @@ flowchart TB
             ADGUARD["AdGuard Home<br/>DNS :53 (toutes interfaces)<br/>Admin :127.0.0.1:3000"]
             PORTAINER["Portainer CE<br/>Hôte :127.0.0.1:9443"]
             N8N["n8n<br/>Hôte :127.0.0.1:5678"]
+            GLANCES["Glances<br/>Hôte :127.0.0.1:61208"]
         end
     end
 
@@ -77,13 +77,14 @@ flowchart TB
     TS -- ":9000" --> ADGUARD
     TS -- ":8443" --> N8N
     TS -- ":10000" --> PORTAINER
+    TS -- ":61208" --> GLANCES
     APPAREILS -. "DNS du tailnet" .-> ADGUARD
     ADGUARD -- "requêtes non bloquées" --> QUAD9
 ```
 
 ### Points à retenir
 
-- Les interfaces web (AdGuard Home, n8n, Portainer) ne sont publiées que sur la boucle locale ; l'accès depuis un autre appareil passe par `tailscale serve`, réservé au tailnet.
+- Les interfaces web (AdGuard Home, n8n, Portainer, Glances) ne sont publiées que sur la boucle locale ; l'accès depuis un autre appareil passe par `tailscale serve`, réservé au tailnet.
 - Seul le DNS d'AdGuard Home écoute sur le réseau local, parce que c'est son rôle.
 - Le serveur lui-même n'utilise pas AdGuard (`accept-dns=false`) : il reste capable de résoudre les noms si le conteneur tombe.
 - Le schéma est une vue simplifiée : il ne représente pas toutes les interfaces Docker ni l'ensemble des règles de filtrage réseau.

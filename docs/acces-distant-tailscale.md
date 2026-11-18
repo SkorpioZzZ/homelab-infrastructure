@@ -41,7 +41,8 @@ Téléphone / ThinkPad
 Dell « homelab » ── tailscale serve (HTTPS, certificat Tailscale)
       ├── :8443  ──▶ 127.0.0.1:5678 ──▶ conteneur n8n
       ├── :9000  ──▶ 127.0.0.1:3000 ──▶ conteneur AdGuard Home (administration)
-      └── :10000 ──▶ 127.0.0.1:9443 ──▶ conteneur Portainer (HTTPS auto-signé)
+      ├── :10000 ──▶ 127.0.0.1:9443 ──▶ conteneur Portainer (HTTPS auto-signé)
+      └── :61208 ──▶ 127.0.0.1:61208 ──▶ conteneur Glances (supervision)
 ```
 
 | Service | URL (depuis le tailnet) |
@@ -49,6 +50,7 @@ Dell « homelab » ── tailscale serve (HTTPS, certificat Tailscale)
 | n8n | `https://homelab.<tailnet>.ts.net:8443` |
 | AdGuard Home (admin) | `https://homelab.<tailnet>.ts.net:9000` |
 | Portainer | `https://homelab.<tailnet>.ts.net:10000` |
+| Glances | `https://homelab.<tailnet>.ts.net:61208` |
 
 Tous sont marqués **`tailnet only`** : invisibles depuis Internet. Le port 443 n'est plus utilisé.
 
@@ -107,6 +109,7 @@ Ajouter un service :
 sudo tailscale serve --bg --https=9000 3000                           # admin AdGuard Home
 sudo tailscale serve --bg --https=8443 5678
 sudo tailscale serve --bg --https=10000 https+insecure://127.0.0.1:9443
+sudo tailscale serve --bg --https=61208 61208                         # Glances
 ```
 
 ## 7. Problèmes rencontrés (journal de dépannage)

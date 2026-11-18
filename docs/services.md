@@ -117,7 +117,6 @@ La présence de ces volumes permet de séparer les données persistantes du cycl
 ## 8. Pistes d'amélioration
 
 - Figer la version de l'image AdGuard Home.
-- Restreindre Glances à la boucle locale.
 - Documenter la configuration réelle des partages Samba.
 - Décrire la méthode de déploiement de chaque conteneur.
 - Définir et tester une procédure de sauvegarde et de restauration.
